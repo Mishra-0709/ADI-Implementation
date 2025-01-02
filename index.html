@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V2X Vehicle Data App</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAvjtupWGWRImxW9_nr__z8ywHQB3cp1rs"></script>
+</head>
+<body>
+    <div class="login-page" id="login-page">
+        <div class="container">
+            <h1>Register</h1>
+            <form id="register-form">
+                <input type="text" id="reg-name" placeholder="Name" required>
+                <input type="email" id="reg-email" placeholder="Email" required>
+                <input type="password" id="reg-password" placeholder="Password" required>
+                <button type="submit">Register</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="login-page" id="login-page-2" style="display:none;">
+        <div class="container">
+            <h1>Login</h1>
+            <form id="login-form">
+                <input type="text" id="login-name" placeholder="Name" required>
+                <input type="password" id="login-password" placeholder="Password" required>
+                <button type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="data-page" id="data-page" style="display:none;">
+        <div id="data-container">
+            <h1>Vehicle Data</h1>
+            <div id="vehicle-data">Fetching data...</div>
+            <div id="map" style="width: 100%; height: 400px; margin-top: 20px;"></div>
+        </div>
+        <button class="sos-button" onclick="triggerSOS()">SOS</button>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
