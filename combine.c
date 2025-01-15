@@ -1,92 +1,144 @@
-#include <NewPing.h>      // Library for HC-SR04 ultrasonic sensors
-#include <Wire.h>
-#include <MPU6050.h>      // Library for MPU-6050 gyro sensor
+#include <Adafruit_MPU6050.h>  // Include MPU6050 library
+#include <Adafruit_Sensor.h>   // Include sensor library
+#include <Wire.h>              // Include Wire library
+#include <WiFi.h>              // Include WiFi library
+#include <ThingSpeak.h>        // Include ThingSpeak library
+#include <U8g2lib.h>           // Include OLED library
 
-// HC-SR04 Ultrasonic Sensor Pin Definitions
-#define TRIG_PIN_1 2
-#define ECHO_PIN_1 3
-#define TRIG_PIN_2 4
-#define ECHO_PIN_2 5
-#define TRIG_PIN_3 6
-#define ECHO_PIN_3 7
-#define TRIG_PIN_4 8
-#define ECHO_PIN_4 9
-#define MAX_DISTANCE 200   // Max measurable distance in cm
+// Constants and Pins
+Adafruit_MPU6050 mpu;
+const int trigPin1 = 5;  // Ultrasonic Sensor 1 Trigger Pin
+const int echoPin1 = 18; // Ultrasonic Sensor 1 Echo Pin
+const int trigPin2 = 22; // Ultrasonic Sensor 2 Trigger Pin
+const int echoPin2 = 23; // Ultrasonic Sensor 2 Echo Pin
+const int ledPin = 4;    // LED Pin
+const int buzzerPin = 15;// Buzzer Pin
 
-// Create NewPing objects for each ultrasonic sensor
-NewPing sonar1(TRIG_PIN_1, ECHO_PIN_1, MAX_DISTANCE);
-NewPing sonar2(TRIG_PIN_2, ECHO_PIN_2, MAX_DISTANCE);
-NewPing sonar3(TRIG_PIN_3, ECHO_PIN_3, MAX_DISTANCE);
-NewPing sonar4(TRIG_PIN_4, ECHO_PIN_4, MAX_DISTANCE);
+#define SOUND_SPEED 0.034 // cm/us -> Speed of sound
 
-// MPU-6050 Gyro Sensor
-MPU6050 mpu;
-float ax, ay, az;
-float myVehicleSpeedX = 0;
+// WiFi and ThingSpeak Credentials
+const char* ssid = "Sesuuu";
+const char* password = "nnnnnnnn";
+WiFiClient client;
+unsigned long myChannelNumber = 2780486;
+const char* myWriteAPIKey = "8IVHBFWZ7FF26I9Q";
 
-// Timing Variables
-unsigned long previousUltrasonicMillis = 0;
-unsigned long previousGyroMillis = 0;
-const long ultrasonicInterval = 1000; // 1-second interval for ultrasonic sensors
-const long gyroInterval = 2000;       // 2-second interval for gyro sensor
+// OLED Display Initialization
+U8G2_SH1106_128X64_NONAME_F_HW_I2C u8g2(U8G2_R0, /* reset=*/ U8X8_PIN_NONE);
+
+long duration1, duration2;
+float distanceCm1, distanceM1, distanceCm2;
+float acceleration, relativeVelocity;
+unsigned long t = 1; // Time interval in seconds
 
 void setup() {
+  // Initialize Serial Monitor
   Serial.begin(9600);
-  
-  // Initialize MPU-6050
-  Wire.begin();
-  mpu.initialize();
-  if (!mpu.testConnection()) {
-    Serial.println("MPU-6050 not connected.");
-    while (1);
+
+  // Initialize MPU6050
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) delay(10);
   }
-  Serial.println("MPU-6050 initialized.");
-  
-  Serial.println("Starting Combined Sensor Readings...");
+  mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  mpu.setGyroRange(MPU6050_RANGE_500_DEG);
+  mpu.setFilterBandwidth(MPU6050_BAND_21_HZ);
+
+  // Initialize Pins
+  pinMode(trigPin1, OUTPUT);
+  pinMode(echoPin1, INPUT);
+  pinMode(trigPin2, OUTPUT);
+  pinMode(echoPin2, INPUT);
+  pinMode(ledPin, OUTPUT);
+  pinMode(buzzerPin, OUTPUT);
+
+  // Initialize Wi-Fi
+  WiFi.mode(WIFI_STA);
+  ThingSpeak.begin(client);
+  WiFi.begin(ssid, password);
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("\nConnected to WiFi.");
+
+  // Initialize OLED
+  u8g2.begin();
+  u8g2.clearDisplay(); // Clear the display buffer
+}
+
+float readUltrasonicSensor(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+  long duration = pulseIn(echoPin, HIGH);
+  return duration * SOUND_SPEED / 2; // Distance in cm
 }
 
 void loop() {
-  unsigned long currentMillis = millis();
+  // Read Ultrasonic Sensor Data
+  distanceCm1 = readUltrasonicSensor(trigPin1, echoPin1); // US1 Distance (cm)
+  distanceM1 = distanceCm1 / 100.0;                      // Convert US1 Distance to meters
+  distanceCm2 = readUltrasonicSensor(trigPin2, echoPin2); // US2 Distance (cm)
 
-  // Ultrasonic Sensor Readings every 1 second
-  if (currentMillis - previousUltrasonicMillis >= ultrasonicInterval) {
-    previousUltrasonicMillis = currentMillis;
+  // Read MPU6050 Sensor Data
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
 
-    // Read distances in cm from each ultrasonic sensor
-    float distance1 = sonar1.ping_cm();
-    float distance2 = sonar2.ping_cm();
-    float distance3 = sonar3.ping_cm();
-    float distance4 = sonar4.ping_cm();
-    
-    // Calculate the average distance
-    float averageDistance = (distance1 + distance2 + distance3 + distance4) / 4.0;
+  acceleration = sqrt(pow(a.acceleration.x, 2) + pow(a.acceleration.y, 2) + pow(a.acceleration.z, 2)) - 9.81;
+  relativeVelocity = fabs((distanceM1 / t) - (acceleration * t)); // Relative velocity (m/s)
 
-    // Print ultrasonic distances and average
-    Serial.print("Ultrasonic Distances - ");
-    Serial.print("D1: "); Serial.print(distance1); Serial.print(" cm, ");
-    Serial.print("D2: "); Serial.print(distance2); Serial.print(" cm, ");
-    Serial.print("D3: "); Serial.print(distance3); Serial.print(" cm, ");
-    Serial.print("D4: "); Serial.print(distance4); Serial.print(" cm, ");
-    Serial.print("Avg: "); Serial.print(averageDistance); Serial.println(" cm");
+  // LED and Buzzer Logic
+  if ((distanceCm1 > 0 && distanceCm1 <= 10) || (distanceCm2 > 0 && distanceCm2 <= 20)) {
+    digitalWrite(ledPin, HIGH);
+  } else {
+    digitalWrite(ledPin, LOW);
   }
 
-  // Gyro Sensor Reading every 2 seconds
-  if (currentMillis - previousGyroMillis >= gyroInterval) {
-    previousGyroMillis = currentMillis;
-
-    // Get acceleration data from MPU-6050
-    mpu.getAcceleration(&ax, &ay, &az);
-
-    // Calculate speed along the X-axis
-    float accelerationX = ax / 16384.0; // Convert raw data to m/s²
-    myVehicleSpeedX += accelerationX * (gyroInterval / 1000.0); // Speed in m/s
-
-    // Print gyro acceleration and calculated speed
-    Serial.print("Gyro - Acceleration (X-axis): ");
-    Serial.print(accelerationX);
-    Serial.print(" m/s^2, ");
-    Serial.print("Calculated Speed: ");
-    Serial.print(myVehicleSpeedX * 100); // Convert to cm/s for consistent units
-    Serial.println(" cm/s");
+  if (relativeVelocity > 5) {
+    digitalWrite(buzzerPin, HIGH);
+    Serial.println("Forward Collision Detected! Buzzer Activated.");
+  } else {
+    digitalWrite(buzzerPin, LOW);
   }
+
+  // OLED Display Logic
+  u8g2.clearBuffer(); // Clear the buffer before drawing
+  u8g2.setFont(u8g2_font_ncenB08_tr);
+  if (fabs(relativeVelocity) > 7 && fabs(acceleration) > 12) {
+    u8g2.drawStr(0, 10, "Forward Collision");
+  } else {
+    u8g2.drawStr(0, 10, "System Monitoring");
+  }
+  u8g2.sendBuffer(); // Send buffer to display
+
+  // Print Data to Serial Monitor
+  Serial.print("US1 Distance (m): ");
+  Serial.println(distanceM1);
+  Serial.print("US2 Distance (cm): ");
+  Serial.println(distanceCm2);
+  Serial.print("Acceleration (m/s^2): ");
+  Serial.println(acceleration);
+  Serial.print("Temperature (C): ");
+  Serial.println(temp.temperature);
+  Serial.print("Relative Velocity (m/s): ");
+  Serial.println(relativeVelocity);
+
+  // Send Data to ThingSpeak
+  ThingSpeak.setField(1, distanceM1);
+  ThingSpeak.setField(2, distanceCm2);
+  ThingSpeak.setField(3, acceleration);
+  ThingSpeak.setField(4, temp.temperature);
+  ThingSpeak.setField(5, relativeVelocity);
+
+  int status = ThingSpeak.writeFields(myChannelNumber, myWriteAPIKey);
+  if (status == 200) {
+    Serial.println("Data successfully sent to ThingSpeak.");
+  } else {
+    Serial.println("Error sending data to ThingSpeak: " + String(status));
+  }
+
+  delay(1000); // 1-second delay
 }
