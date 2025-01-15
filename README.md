@@ -1,130 +1,157 @@
-# MAX78000 Rock Paper Scissors Game
+Vehicle Data Monitoring System
 
-This is a classic rock-paper-scissors game demo that user can play against the computer via the camera module. The model trained in this demo is used to classify images of "rock", "paper" and "scissors" hand gestures. The input size is 64x64 pixels RGB which is 3x64x64 in CHW format.
+Overview
 
-The example supports live capture from camera module and displays the result on the TFT LCD. The code also uses a sample data header (sampledata.h) file to test a pre-defined input sample.
+This project showcases a Vehicle Data Monitoring System with features like real-time display of speed, acceleration, temperature, and GPS coordinates. Additionally, it provides a visual representation of the vehicle's current location on Google Maps.
 
-## Software
+Features
 
-### Project Usage
+Real-time data display:
 
-Universal instructions on building, flashing, and debugging this project can be found in the **[MSDK User Guide](https://analogdevicesinc.github.io/msdk/USERGUIDE/)**.
+Speed
 
-### Project-Specific Build Notes
+Acceleration
 
-* This project comes pre-configured for the MAX78000EVKIT.  See [Board Support Packages](https://analogdevicesinc.github.io/msdk/USERGUIDE/#board-support-packages) in the UG for instructions on changing the target board.
+Temperature
 
-* By default, this project is configured for [camera mode](#camera-mode).  It can be configured for [offline mode](#offline-mode) by defining `USE_SAMPLE_DATA` in [main.c](main.c).
+GPS Coordinates (Latitude and Longitude)
 
-    ```C
-    // Comment out USE_SAMPLEDATA to use Camera module
-    #define USE_SAMPLEDATA
-    ```
+Integration with Google Maps to show vehicle location.
 
-* This project supports output to a TFT display.  When building for the MAX78000EVKIT, the display is **enabled** by default.
+SOS button functionality for emergencies.
 
-    * To _disable_ the TFT display code, comment out `PROJ_CFLAGS += -DTFT_ENABLE` in [project.mk](project.mk)
+Lane capture and detection using the MAXFTHR78000's camera module.
 
-        ```Makefile
-        ifeq "$(BOARD)" "EvKit_V1"
-        # PROJ_CFLAGS+=-DTFT_ENABLE
-        IPATH += TFT/evkit/
-        VPATH += TFT/evkit/
-        endif
-        ```
+Live data updates to the cloud with Thingspeak integration.
 
-* When building for the MAX78000FTHR, the TFT display is **disabled** by default.  The compatible 2.4'' TFT FeatherWing is an optional display that does not come with the MAX7800FTHR.  It can be ordered [here](https://learn.adafruit.com/adafruit-2-4-tft-touch-screen-featherwing)
+Web-based dashboard for authorized users to monitor data and receive alerts.
 
-    * To _enable_ the TFT display code, uncomment `PROJ_CFLAGS += -DTFT_ENABLE` in [project.mk](project.mk)
+Technologies Used
 
-        ```Makefile
-        ifeq "$(BOARD)" "FTHR_RevA"
-        # Only Enable if 2.4" TFT is connected to Feather
-        PROJ_CFLAGS+=-DTFT_ENABLE
-        IPATH += TFT/fthr
-        VPATH += TFT/fthr
-        endif
-        ```
+Eclipse IDE: Used for programming the MAXFTHR78000 microcontroller.
 
-### MAX78000 EVKIT operations
+MAXFTHR78000: A powerful development board for AI and embedded applications.
 
-*   If using camera and TFT LCD, place OVM7692 camera module on 'J4 Camera' header. Place TFT display on the display header.
-*   Connect a USB cable between the PC and the CN1 (USB/PWR) connector.
-*   Place jumper P0\_0 and P0\_1 on UART\_0\_EN header JH1.
-*   Open a serial port application on the PC and connect to Ev-Kit's console UART at 115200, 8-N-1 configuration.
+Camera Module: Captures lane images for lane detection functionality.
 
-This demo is operated in two modes: Real-time data using Camera module or using sample image header file in offline mode.
+TFT Display: Outputs real-time vehicle data.
 
-In either mode, pushbutton trigger PB1(SW2) is used to capture and load an image into CNN engine. User is prompted to press PB1 to load an image
+Arduino IDE: Used for sensory programming with the ESP32 Dev Module.
 
-### MAX78000 Feather operations
+Thingspeak Cloud: Updates live sensor data to the cloud.
 
-The TFT display is optional and not supplied with the MAX78000 Feather board.
-User should use PC terminal program to observe **cats-dogs_demo** result as described in "Terminal output" section.
+Enables real-time monitoring and alert generation.
 
-The MAX78000 Feather compatible 2.4'' TFT FeatherWing display can be ordered here:
+Data is accessible via a secure, custom-built website.
 
-https://learn.adafruit.com/adafruit-2-4-tft-touch-screen-featherwing
+Custom Website:
 
-See [build notes](#project-specific-build-notes) for instructions on enabling the display.
+Displays live vehicle data.
 
-This TFT display comes fully assembled with dual sockets for MAX78000 Feather to plug into.
+Sends alerts and notifications based on significant data changes.
 
-While using TFT display keep its power switch in "ON" position. The TFT "Reset" button also can be used as Feather reset.
-Press PB1 (SW1) button to start demo.
+Provides SOS functionality for authorized users.
 
-### Camera Mode�
+Google Maps API: Displays the vehicle's location on a map.
 
-If `USE_SAMPLEDATA` is _not_ defined the project will operate in "Camera mode".  See [build notes](#project-specific-build-notes) for instructions on enabling this mode.
+Setup Instructions
 
-This mode uses OVM7692 camera module to capture an image in RGB888 format. Since the model is trained using 64x64 pixel image, the PCIF peripheral captures 64x64 pixel image and displays it on LCD.
+Hardware Setup:
 
-The data received from camera interface is an unsigned data and should be converted to signed data before feeding to the CNN network.
+Connect the MAXFTHR78000 board to your PC via USB.
 
-### Offline Mode
+Attach the OVM7692 camera module to the MAXFTHR78000 board for lane capture.
 
-If `USE_SAMPLEDATA` is defined this project will operate in "offline mode".
+Ensure the TFT display is connected and powered on.
 
-This mode uses a header file [sampledata.h](sampledata.h) containing RGB image data and it should be included in the project to use it as an input to the cnn network.
+Connect the ESP32 Dev Module to sensors for data acquisition.
 
-To create your own header file follow these steps:
+Software Setup:
 
-1.  Navigate to Utility directory. $ cd Utility
-2.  Download rock, paper or scissors hand gesture image in this directory.
-3.  Open 'rgb.py' file and change the name of the image file on line 8. im = (Image.open('image_filename.format')). Save the changes.
-4.  Now generate a header file using this command: python3 rgb.py
-5.  Use this header file in your main.c
+Install Eclipse IDE and configure it for MAXFTHR78000 programming.
 
-Terminal output
----------------
+Install Arduino IDE and set up the ESP32 board support package.
 
-The Console UART of the device will output these messages:
+Import the respective project files into Eclipse and Arduino IDE.
 
-```
-RPS Feather Demo
-Waiting...
-Init LCD.
-Init Camera.
-********** Press PB1 to capture an image **********
+Ensure the required libraries and dependencies are included.
 
-Capture a camera frame 1
-Copy camera frame to CNN input buffers.
-Show camera frame on LCD.
-Time for CNN: 2667 us
+Cloud Integration:
 
-Classification results:
-[ 153671] -> Class 0    Paper: 100.0%
-[-216581] -> Class 1     Rock: 0.0%
-[-283383] -> Class 2 Scissors: 0.0%
+Create a Thingspeak account and configure a channel for data upload.
 
-User choose: Paper 
-Computer choose: Scissors
+Update the ESP32 code with your Thingspeak API key.
 
-COMPUTER WINS!!!
+Web Dashboard Setup:
 
-********** Press PB1 to capture an image **********
-```
+Host the custom website on a suitable platform.
 
-### References
+Link it to the Thingspeak channel for live data updates.
 
-https://github.com/MaximIntegratedAI/MaximAI_Documentation
+Implement authentication for authorized user access.
+
+Google Maps Integration:
+
+Obtain an API key from the Google Cloud Console.
+
+Update the API key in the source code where required.
+
+Build and Run:
+
+Compile the project in Eclipse IDE for MAXFTHR78000 programming.
+
+Flash the sensory programming code onto the ESP32 using Arduino IDE.
+
+Flash the MAXFTHR78000 program onto the board.
+
+Open a terminal on the PC to view console logs.
+
+Lane Detection Feature
+
+The lane detection functionality is powered by the MAXFTHR78000's integrated AI capabilities.
+
+The OVM7692 camera module captures live images of the road.
+
+These images are processed to detect lane boundaries in real time.
+
+Cloud and Web Features
+
+Thingspeak Cloud:
+
+Collects and logs live data from ESP32 sensors.
+
+Updates data at regular intervals for seamless monitoring.
+
+Custom Website:
+
+Allows authorized users to access live data.
+
+Provides alerts and warnings for drastic changes in parameters.
+
+SOS functionality enables users to call for help in emergencies.
+
+SOS Functionality
+
+The SOS button can be pressed to trigger an emergency response.
+
+It highlights the vehicle's current location on the map and sends an alert.
+
+Notifications are accessible through the custom-built website.
+
+Future Enhancements
+
+Integration with additional cloud storage for logging historical data.
+
+Adding machine learning models for advanced driver assistance systems (ADAS).
+
+Support for more detailed analytics like fuel efficiency and engine diagnostics.
+
+References
+
+Maxim Integrated AI Documentation: GitHub Repository
+
+Eclipse IDE User Guide: Eclipse Documentation
+
+Thingspeak Cloud Documentation: Thingspeak Guide
+
+For more details, refer to the project's presentation or contact the developer.
