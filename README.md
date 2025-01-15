@@ -77,10 +77,6 @@ Website:https://unique-salmiakki-6ff2f4.netlify.app/
 - It highlights the vehicle's current location on the map and sends an alert.
 - Notifications are accessible through the custom-built website.
 
-## Future Enhancements
-- Integration with additional cloud storage for logging historical data.
-- Adding machine learning models for advanced driver assistance systems (ADAS).
-- Support for more detailed analytics like fuel efficiency and engine diagnostics.
 
 ## References
 1. Maxim Integrated AI Documentation: [GitHub Repository](https://github.com/MaximIntegratedAI/MaximAI_Documentation)
