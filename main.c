@@ -147,7 +147,33 @@ void process_camera_img(uint32_t *data0, uint32_t *data1, uint32_t *data2)
         }
     }
 }
+void detectDeviation(float ou) {
+            // Clear both pins initially
+            MXC_GPIO_OutClr(DEVIATION_PORT, RIGHT_DEVIATION_PIN);
+            MXC_GPIO_OutClr(DEVIATION_PORT, LEFT_DEVIATION_PIN);
 
+           // if (f <= 0.7 && f >= -0.7) {
+                // Normal
+             //   printf("No Deviation\n");
+             if (ou <= 10 && ou > 0.7) {
+                // Right deviation
+                printf("Right Deviation\n");
+                MXC_GPIO_OutSet(DEVIATION_PORT, RIGHT_DEVIATION_PIN);
+                MXC_GPIO_OutClr(DEVIATION_PORT, LEFT_DEVIATION_PIN);
+                // Turn P0_6 HIGH
+            } else if (ou < -0.7 && ou >= -10) {
+                // Left deviation
+                printf("Left Deviation\n");
+                MXC_GPIO_OutSet(DEVIATION_PORT, LEFT_DEVIATION_PIN);
+                MXC_GPIO_OutClr(DEVIATION_PORT, RIGHT_DEVIATION_PIN);// Turn P0_5 HIGH
+            }else {
+
+            	MXC_GPIO_OutClr(DEVIATION_PORT, RIGHT_DEVIATION_PIN);
+            	MXC_GPIO_OutClr(DEVIATION_PORT, LEFT_DEVIATION_PIN);
+
+                //printf("Error in scanning road edge lines\n");
+            }
+        }
 /* **************************************************************************** */
 void capture_camera_img(void)
 {
@@ -256,26 +282,7 @@ int main(void)
         process_camera_img(input_0_camera, input_1_camera, input_2_camera);
         float ou=Detect_Lines(chobi);
         printf("%f\n ", ou);
-        void detectDeviation(ou) {
-            // Clear both pins initially
-            MXC_GPIO_OutClr(DEVIATION_PORT, RIGHT_DEVIATION_PIN);
-            MXC_GPIO_OutClr(DEVIATION_PORT, LEFT_DEVIATION_PIN);
 
-           // if (f <= 0.7 && f >= -0.7) {
-                // Normal
-             //   printf("No Deviation\n");
-             if (ou <= 10 && ou > 0.7) {
-                // Right deviation
-                printf("Right Deviation\n");
-                MXC_GPIO_OutSet(DEVIATION_PORT, RIGHT_DEVIATION_PIN); // Turn P0_6 HIGH
-            } else if (ou < -0.7 && ou >= -10) {
-                // Left deviation
-                printf("Left Deviation\n");
-                MXC_GPIO_OutSet(DEVIATION_PORT, LEFT_DEVIATION_PIN); // Turn P0_5 HIGH
-            }// else {
-               // printf("Error in scanning road edge lines\n");
-            //}
-        }
         detectDeviation(ou);
 
         #endif
