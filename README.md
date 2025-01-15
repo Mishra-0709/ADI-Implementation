@@ -36,6 +36,8 @@ This project showcases a **Vehicle Data Monitoring System** with features like r
    - Attach the OVM7692 camera module to the MAXFTHR78000 board for lane capture.
    - Ensure the TFT display is connected and powered on.
    - Connect the ESP32 Dev Module to sensors for data acquisition.
+     ![image](https://github.com/user-attachments/assets/012c948a-b146-428d-b209-a79669689a65)
+
 2. **Software Setup**:
    - Install Eclipse IDE and configure it for MAXFTHR78000 programming.
    - Install Arduino IDE and set up the ESP32 board support package.
